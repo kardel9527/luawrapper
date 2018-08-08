@@ -100,12 +100,8 @@ template<> int read(lua_State *L, int idx);
 template<> unsigned int read(lua_State *L, int idx);
 template<> long read(lua_State *L, int idx);
 template<> unsigned long read(lua_State *L, int idx);
-
-#if LONGLONG_EXISTS
 template<> long long read(lua_State *L, int idx);
 template<> unsigned long long read(lua_State *L, int idx);
-#endif // LONGLONG_EXISTS
-
 template<> float read(lua_State *L, int idx);
 template<> double read(lua_State *L, int idx);
 template<> void read(lua_State *L, int idx);
@@ -136,9 +132,13 @@ template<typename T> struct object2lua<T *> {
 	static void push(lua_State *L, T *t) {
 		static_assert(std::is_class<typename std::remove_pointer<T>::type>::value || std::is_union<typename std::remove_pointer<T>::type>::value, "error type!");
 		//lua_pushlightuserdata(L, t);
-		new(lua_newuserdata(L, sizeof(ObjectWrapper<T>))) ObjectWrapper<T>(t, false);
-		lua_getglobal(L, ObjectName<typename base<T>::type>::name);
-		lua_setmetatable(L, -2);
+		if (t) {
+			new(lua_newuserdata(L, sizeof(ObjectWrapper<T>))) ObjectWrapper<T>(t, false);
+			lua_getglobal(L, ObjectName<typename base<T>::type>::name);
+			lua_setmetatable(L, -2);
+		} else {
+			lua_pushnil(L);
+		}
 	}
 };
 
@@ -167,12 +167,8 @@ template<> void push(lua_State *L, int val);
 template<> void push(lua_State *L, unsigned int val);
 template<> void push(lua_State *L, long val);
 template<> void push(lua_State *L, unsigned long val);
-
-#if LONGLONG_EXISTS
 template<> void push(lua_State *L, long long val);
 template<> void push(lua_State *L, unsigned long long val);
-#endif // LONGLONG_EXISTS
-
 template<> void push(lua_State *L, float val);
 template<> void push(lua_State *L, double val);
 template<> void push(lua_State *L, const char *val);
@@ -281,6 +277,9 @@ void push_method(lua_State *L, void (T::*)(Args...) const) {
 	lua_pushcclosure(L, mem_method_without_ret<T, Args...>, 1);
 }
 
+template<typename T> struct RetNum { enum { value = 1}; };
+template<> struct RetNum<void> { enum { value = 0 }; };
+
 // call a global lua function
 template<typename RT, typename ... Args>
 RT call(lua_State *L, const char *func, const Args& ... args) {
@@ -289,9 +288,9 @@ RT call(lua_State *L, const char *func, const Args& ... args) {
 
 	lua_getglobal(L, func);
 	if (lua_isfunction(L, -1)) {
-		int arr[] = { (push(L, args), 0)... };
+		int arr[] = {0, (push(L, args), 0)... };
 		unused(arr); // avoid warnning
-		lua_pcall(L, sizeof...(args), 1, err_func);
+		lua_pcall(L, sizeof...(args), RetNum<RT>::value, err_func);
 	} else {
 		assert(false && "attemp to call a none function!");
 	}
@@ -314,7 +313,7 @@ RT direct_call(lua_State *L, const char *func, const Args& ... args) {
 		if (lua_isfunction(L, -1)) {
 			int arr[] = { (push(L, args), 0)... };
 			unused(arr); // avoid warnning
-			lua_pcall(L, sizeof...(args), 1, err_func);
+			lua_pcall(L, sizeof...(args), RetNum<RT>::value, err_func);
 		} else {
 			assert(false && "attemp to call a none function!");
 		}

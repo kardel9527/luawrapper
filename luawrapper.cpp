@@ -135,12 +135,8 @@ template<> int read(lua_State *L, int idx) { return (int)lua_tointeger(L, idx); 
 template<> unsigned int read(lua_State *L, int idx) { return (unsigned int)lua_tointeger(L, idx); }
 template<> long read(lua_State *L, int idx) { return (long)lua_tointeger(L, idx); }
 template<> unsigned long read(lua_State *L, int idx) { return (unsigned long)lua_tointeger(L, idx); }
-
-#if LONGLONG_EXISTS
 template<> long long read(lua_State *L, int idx) { return (long long)lua_tointeger(L, idx); }
 template<> unsigned long long read(lua_State *L, int idx) { return (unsigned long long)lua_tointeger(L, idx); }
-#endif // LONGLONG_EXISTS
-
 template<> float read(lua_State *L, int idx) { return (float)lua_tonumber(L, idx); }
 template<> double read(lua_State *L, int idx) { return (double)lua_tonumber(L, idx); }
 template<> const char* read(lua_State *L, int idx) { return lua_tostring(L, idx); }
@@ -158,12 +154,8 @@ template<> void push(lua_State *L, int val) { lua_pushinteger(L, val); }
 template<> void push(lua_State *L, unsigned int val) { lua_pushinteger(L, val); }
 template<> void push(lua_State *L, long val) { lua_pushinteger(L, val); }
 template<> void push(lua_State *L, unsigned long val) { lua_pushinteger(L, val); }
-
-#if LONGLONG_EXISTS
 template<> void push(lua_State *L, long long val) { lua_pushinteger(L, val); }
 template<> void push(lua_State *L, unsigned long long val) { lua_pushinteger(L, val); }
-#endif // LONGLONG_EXISTS
-
 template<> void push(lua_State *L, float val) { lua_pushnumber(L, val); }
 template<> void push(lua_State *L, double val) { lua_pushnumber(L, val); }
 template<> void push(lua_State *L, const char *val) { lua_pushstring(L, val); }
